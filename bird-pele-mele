@@ -1,0 +1,112 @@
+@EnableWebMvc
+@Configuration
+class WebAppConfig : WebMvcConfigurer {
+
+    override fun configureMessageConverters(converters: MutableList<HttpMessageConverter<*>>) {
+        val builder = Jackson2ObjectMapperBuilder()
+        builder.serializerByType(ObjectId::class.java, ToStringSerializer())
+        val converter = MappingJackson2HttpMessageConverter(builder.build())
+        converters.add(converter)
+    }
+
+    @Bean
+    fun taskExecutor(): Executor {
+        return SimpleAsyncTaskExecutor()
+    }
+}
+
+
+package com.grtgaz.togazer.service
+
+import org.springframework.http.MediaType
+import org.springframework.scheduling.annotation.Scheduled
+import org.springframework.stereotype.Service
+import javax.ws.rs.client.ClientBuilder
+import javax.ws.rs.client.Entity
+
+
+@Service
+class BirdCollectorService {
+
+    val client = ClientBuilder.newClient()
+
+    @Scheduled(fixedRate = 5000)
+    fun collectDate() {
+        println("collecting data ....")
+        // if token exist
+        // collect data
+        // else get token
+        val token = getJerseyBirdToken()
+        // collect data
+        val datas = fetchDataParis(token)
+
+        // save data
+    }
+
+    private fun fetchDataParis(token: String): Any {
+        val url = "https://api.bird.co/user/login"
+        val webTarget = client.target(url)
+        webTarget.request()
+            .header("Authorization", "Bird $token")
+            .header("Device-id", "b406fb8e-1b0a-11e9-ab14-d663bd873d93")
+            .header("App-Version", "3.0.5")
+            .header("Location", "{\"latitude\":37.77249,\"longitude\":-122.40910,\"altitude\":500,\"accuracy\":100,\"speed\":-1,\"heading\":-1}")
+            .get()
+    }
+
+
+    private fun getJerseyBirdToken(): String {
+        val url = "https://api.bird.co/user/login"
+        val input = "{\"email\":\"email@gmail.com\"}"
+//        val entity = HttpEntity(input, headers)
+
+        val webTarget = client.target(url)
+        val post = webTarget.request()
+            .accept(MediaType.APPLICATION_JSON_VALUE)
+            .header("Device-id", "b406fb8e-1b0a-11e9-ab14-d663bd873d93")
+            .header("Platform", "ios")
+            .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+            .post(Entity.json(input), String::class.java)
+        println(post)
+//        println(post.entity)
+//        println(post.readEntity())
+        return "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJBVVRIIiwidXNlcl9pZCI6IjZiYjBkYThjLWNjNGItNDBhZi05NGRiLTVjNmUzMTEyYmU4OCIsImRldmljZV9pZCI6ImI0MDZmYjhlLTFiMGEtMTFlOS1hYjE0LWQ2NjNiZDg3M2Q5MyIsImV4cCI6MTU3OTM1Nzc3OX0.N5MccksG13IEEnaq0OJekwIUcULFXwb-kvHISf9OBvI"
+    }
+}
+
+
+package com.grtgaz.togazer
+
+import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.runApplication
+import org.springframework.scheduling.annotation.EnableScheduling
+import java.util.*
+
+@EnableScheduling
+@SpringBootApplication
+class TogazerApplication
+
+fun main(args: Array<String>) {
+    TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
+    runApplication<TogazerApplication>(*args)
+}
+
+
+
+    <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-client</artifactId>
+            <version>2.27</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jersey.inject</groupId>
+            <artifactId>jersey-hk2</artifactId>
+            <version>2.26</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-json-jackson</artifactId>
+            <version>2.22</version>
+        </dependency>
